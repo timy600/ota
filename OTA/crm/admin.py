@@ -13,7 +13,7 @@ class InvoiceInline(admin.TabularInline):
 class UserAdmin(admin.ModelAdmin):
     fieldsets = [
         (
-            None, {'fields':["name", "email"]}
+            None, {'fields':["firstname","lastname", "email"]}
         ),
         (
             "Company References",
