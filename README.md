@@ -5,18 +5,17 @@
 ### About the project
 Simple Django CRM app with two models (User and Invoice)
 
-### Project Structure
-
-### Getting Started
-
-#### Prerequisites
-
-#### Installation
 
 #### Usage
-- Launch
-- Admin App
-- API Endpoints
+Launch: 
+
+```
+cd OTA
+cd python manage.py runserver 
+```
+
+Admin App: I've let the migrations and the sqlite.db I used. 
+API Endpoints:
 
 ```
 crm/user: retrieve list of users with id
@@ -54,11 +53,12 @@ The endpoints would look like this:
 
 /api/ps/...
 
+Django's views are where the mechanic is happening, but we will need to call on actions that affect the three apps (CRM, SA, PS) and their respective DBs everytime a change happens in one of them. The CRM is at the center of them, since a User is also a Customer or a Client in the other ones a change in the Invoices need to be reflected in both apps. 
+This is the moment to think about separating the App Logic and the View Logic. We could use app.py as long as we separate by class according to the DB to be eventually modified. So two new app.py files in the apis folders with their classes: CallApiSalesAutomation, CallPaymentSystem; and a CRM equivalent, ControllerCRM. But a big change must also come from the admin.py file, since a change coming from the Admin Pages will imply a change in the SA and PS Apps. This will be one of the trigger to call one of the three previous classes. 
 
 #### Jira tickets:
 Low: refactor user/ endpoints (just move to a new folder)
-High: modify user/invoice models
-
+High: access requests from the admin.py classes (InvoiceInline and UserAdmin).
 
 ### 2. Authentication
 Since we'll interact with the two apps as Rest API, the Authentication process will pass by the request object in the views.py files.
@@ -67,51 +67,45 @@ We can use Django's Middleware "AuthenticationMiddleware" (see the MIDDLEWARE  i
 ```python
 django.contrib.auth import authenticate, login
 ```
-Una vez establecido un login, se puede usar el decorador @login_required para las views que necesitan uno.
+Once the Login is established, we can us the decorator @login_required in the views needing one.
 
 #### Jira tickets:
 High
 
 ### 3. Sales Automation
-From CRM to SA:
+Action Features, from CRM to SA:
 
-- create customer
-- update customer profile fields
-- update customer Boolean payed Invoice field
+- create customer: Originate from the Admin module. CallApiSalesAutomation.create_customer() that calls SA API POST customer. Should also call ControllerCRM.create_user().
+- update customer profile fields: Originate from the Admin module. CallApiSalesAutomation.update_customer(), ControllerCRM.update_user()
+- create Invoice: Originate from the Admin module. Since the status depends from the Payment System, the status will always be unpaid, CallApiSalesAutomation.check_invoice_status() must be called. If all invoices for this customer where paid until now, it will trigger CallApiSalesAutomation.update_customer() where the only field updated will be the last one. Also calls ControllerCRM.create_invoice().
+- update customer Boolean payed Invoice field: Originate from apis/ps/views.py. Same as previous, calls CallApiSalesAutomation.check_invoice_status(), then CallApiSalesAutomation.update_customer(). Also calls ControllerCRM.update_invoice().
 
-From SA to CRM:
+Action Features, from SA to CRM:
 
-- create user
-- update user profile fields
-- update invoice Boolean payed Invoice field
+- create user: Originate from the apis/sa/view.py. ControllerCRM.create_user(), CallApiPaymentSystem.create_client().
+- update user profile fields: Originate from the apis/sa/view.py. This should only update the fields related to the Customer Profile. The last field (cs_open_payment) value is not determined here. Calls ControllerCRM.update_user() and CallApiPaymentSystem.update_client().
 
-Adapt the API CRM User:
-
-In urlpatterns, add the following endpoints:
-
-```
-GET/POST: /api/user/
-GET/POST: /api/user/
-PUT/DELETE: /api/user/<crm_user_id>
-
-GET/POST: /api/sa/
-PUT/DELETE: /api/sa/<crm_user_id>
-```
-
-In views.py
-Methods: add CRUD methods for User and Invoice.
+#### Jira Tickets: 
+High: build "create customer" and  "update customer" features
+High: build "create user" and "update user" features  
+Medium: change "create invoice" and "update invoice" features (need first to develop the PS).
 
 ### 4. Payment System
 
-From CRM to PS:
+Action Features, from CRM to PS:
 
-- create client
-- update client
-- create invoice
+- create client: Originate from the Admin module or apis/sa/views.py. CallApiPaymentSystem.create_client() that calls PS API POST customer. Should also call ControllerCRM.create_user() but already developped in SA Part.
+- update client: Originate from the Admin module or apis/sa/views.py. CallApiPaymentSystem.update_client(). Should also call ControllerCRM.create_user() but already developped in SA Part.
+- create invoice: Originate from the Admin module. CallApiPaymentSystem.create_invoice() and ControllerCRM.create_invoice().
 
-From PS to CRM:
+Action Features, from PS to CRM:
 
-- update invoice status
+- update invoice status: Originate from apis/ps/views.py. Calls CallApiSalesAutomation.check_invoice_status() and ControllerCRM.update_invoice()
+
+#### Jira Tickets: 
+High: build "create client" and "update client"
+High: build "create invoice" and "update invoice".
+Medium: change "create user" and "update user"
 
 
 ### 5. Parsing Data and Serialization
