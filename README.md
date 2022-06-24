@@ -11,7 +11,7 @@ Launch:
 
 ```
 cd OTA
-cd python manage.py runserver 
+python manage.py runserver 
 ```
 
 Admin App: I've let the migrations and the sqlite.db I used. 
