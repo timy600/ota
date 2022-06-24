@@ -86,8 +86,11 @@ Action Features, from SA to CRM:
 - update user profile fields: Originate from the apis/sa/view.py. This should only update the fields related to the Customer Profile. The last field (cs_open_payment) value is not determined here. Calls ControllerCRM.update_user() and CallApiPaymentSystem.update_client().
 
 #### Jira Tickets: 
+
 High: build "create customer" and  "update customer" features
+
 High: build "create user" and "update user" features  
+
 Medium: change "create invoice" and "update invoice" features (need first to develop the PS).
 
 ### 4. Payment System
@@ -103,8 +106,11 @@ Action Features, from PS to CRM:
 - update invoice status: Originate from apis/ps/views.py. Calls CallApiSalesAutomation.check_invoice_status() and ControllerCRM.update_invoice()
 
 #### Jira Tickets: 
+
 High: build "create client" and "update client"
+
 High: build "create invoice" and "update invoice".
+
 Medium: change "create user" and "update user"
 
 
